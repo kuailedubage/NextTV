@@ -9,10 +9,14 @@ const inter = Inter({
   fallback: [
     "-apple-system",
     "BlinkMacSystemFont",
-    "PingFang SC",
-    "Microsoft YaHei",
-    "Heiti SC",
+    "Segoe UI",
+    "Segoe UI Midlevel",
+    "Noto Sans",
+    "Helvetica",
+    "Arial",
     "sans-serif",
+    "Apple Color Emoji",
+    "Segoe UI Emoji"
   ],
 });
 
