@@ -3,21 +3,43 @@
 import { useRouter } from "next/navigation";
 import { formatTimeRemaining } from "@/lib/util";
 import { useSettingsStore } from "@/store/useSettingsStore";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { MaterialSymbolsPlayArrowRounded } from "@/components/icons";
+
+const UPGRADE_CACHE_TTL = 15 * 60 * 1000;
+const upgradeCache = new Map();
 
 export function ContinueWatching({ playHistory }) {
   const router = useRouter();
   const { videoSources } = useSettingsStore();
   const [updatedEpisodes, setUpdatedEpisodes] = useState({});
 
+  const recentHistory = useMemo(
+    () => (playHistory || []).slice(0, 6),
+    [playHistory],
+  );
+  const historyDependencyKey = useMemo(
+    () =>
+      recentHistory
+        .map((item) => `${item.source}:${item.id}:${item.totalEpisodes}`)
+        .join("|"),
+    [recentHistory],
+  );
+  const sourceUrlDependencyKey = useMemo(
+    () =>
+      videoSources
+        .map((source) => `${source.key}:${source.url}`)
+        .sort()
+        .join("|"),
+    [videoSources],
+  );
+
   useEffect(() => {
-    if (!playHistory || playHistory.length === 0) return;
+    if (recentHistory.length === 0) return;
+
+    let cancelled = false;
 
     const checkUpdates = async () => {
-      // 1. 取前6条记录
-      const recentHistory = playHistory.slice(0, 6);
-
       // 2. 按 source 分组
       const groupedBySource = recentHistory.reduce((acc, item) => {
         if (!acc[item.source]) {
@@ -37,13 +59,26 @@ export function ContinueWatching({ playHistory }) {
           if (!sourceConfig || !sourceConfig.url) return;
 
           const ids = items.map((item) => item.id).join(",");
+          const cacheKey = `${sourceKey}|${sourceConfig.url}|${ids}`;
+          const cachedEntry = upgradeCache.get(cacheKey);
+          let episodeLengths;
 
           try {
-            const res = await fetch(`/api/upgrade?ids=${ids}&sourceUrl=${sourceConfig.url}`);
-            const data = await res.json();
+            if (cachedEntry && Date.now() - cachedEntry.timestamp < UPGRADE_CACHE_TTL) {
+              episodeLengths = cachedEntry.episodeLengths;
+            } else {
+              const res = await fetch(`/api/upgrade?ids=${ids}&sourceUrl=${sourceConfig.url}`);
+              const data = await res.json();
 
-            // 处理可能的嵌套结构
-            const episodeLengths = data.episodeLength?.episodeLength || data.episodeLength;
+              // 处理可能的嵌套结构
+              episodeLengths = data.episodeLength?.episodeLength || data.episodeLength;
+              if (Array.isArray(episodeLengths)) {
+                upgradeCache.set(cacheKey, {
+                  episodeLengths,
+                  timestamp: Date.now(),
+                });
+              }
+            }
 
             if (Array.isArray(episodeLengths)) {
               // 根据 id 匹配，而不是依赖数组索引顺序
@@ -64,11 +99,17 @@ export function ContinueWatching({ playHistory }) {
         }),
       );
 
-      setUpdatedEpisodes(updates);
+      if (!cancelled) {
+        setUpdatedEpisodes(updates);
+      }
     };
 
     checkUpdates();
-  }, [playHistory, videoSources]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [recentHistory, videoSources, historyDependencyKey, sourceUrlDependencyKey]);
 
   if (!playHistory || playHistory.length === 0) {
     return null;
@@ -105,7 +146,7 @@ export function ContinueWatching({ playHistory }) {
       </div>
 
       <div className="flex gap-4 overflow-x-auto hide-scrollbar pb-2">
-        {playHistory.slice(0, 6).map((record) => (
+        {recentHistory.map((record) => (
           <div
             key={`${record.source}-${record.id}`}
             className="group relative shrink-0 w-[280px] bg-white rounded-xl border border-gray-200 overflow-hidden hover:border-primary transition-colors duration-300 cursor-pointer"

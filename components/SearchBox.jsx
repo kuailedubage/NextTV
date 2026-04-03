@@ -88,14 +88,16 @@ export function SearchBox({ initialValue = "", onSearch, placeholder = "搜索�
           onFocus={() => setShowHistory(true)}
         />
         <div className="absolute inset-y-0 right-4 flex items-center">
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
             {inputValue && (
               <button type="button" onClick={handleClearInput} className="p-1 hover:bg-gray-100 rounded-md text-gray-400 hover:text-gray-600 transition-colors btn-press">
                 <MaterialSymbolsCloseRounded className="text-xl" />
               </button>
             )}
             <div className="w-px h-6 bg-gray-200 self-center"></div>
-            <span className="bg-gray-100 text-gray-500 text-xs px-2 py-1 rounded border border-gray-200 self-center">⌘K</span>
+            <kbd className="inline-flex min-w-8 items-center justify-center rounded-md border border-gray-200 bg-linear-to-b from-white to-gray-50 px-2 py-[5px] text-[10px] font-medium leading-none text-gray-400 shadow-[0_1px_0_rgba(255,255,255,0.95)_inset,0_1px_1px_rgba(15,23,42,0.04)] self-center">
+              ⏎
+            </kbd>
           </div>
         </div>
       </form>

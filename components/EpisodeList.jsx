@@ -5,8 +5,7 @@ import { MaterialSymbolsSwapVertRounded, MaterialSymbolsChevronRightRounded } fr
 
 export function EpisodeList({ episodes, episodesTitles, currentEpisodeIndex, onEpisodeClick, onCollapse }) {
   const [isReversed, setIsReversed] = useState(false);
-  const [page, setPage] = useState(0);
-  const [prevEpisodeIndex, setPrevEpisodeIndex] = useState(currentEpisodeIndex);
+  const [manualPageState, setManualPageState] = useState({ episodeIndex: currentEpisodeIndex, page: 0 });
   const pageSize = 35;
 
   // 根据排序状态生成显示列表
@@ -16,16 +15,9 @@ export function EpisodeList({ episodes, episodesTitles, currentEpisodeIndex, onE
     return isReversed ? [...indices].reverse() : indices;
   }, [episodes, isReversed]);
 
-  // 当当前集数变化时，自动切换到所在页（在渲染阶段处理，避免 useEffect 中调用 setState）
-  if (currentEpisodeIndex !== prevEpisodeIndex && episodes) {
-    setPrevEpisodeIndex(currentEpisodeIndex);
-    const currentIndexInDisplay = displayEpisodes.indexOf(currentEpisodeIndex);
-    if (currentIndexInDisplay !== -1) {
-      const targetPage = Math.floor(currentIndexInDisplay / pageSize);
-      setPage(targetPage);
-    }
-  }
-
+  const currentIndexInDisplay = displayEpisodes.indexOf(currentEpisodeIndex);
+  const syncedPage = currentIndexInDisplay === -1 ? 0 : Math.floor(currentIndexInDisplay / pageSize);
+  const page = manualPageState.episodeIndex === currentEpisodeIndex ? manualPageState.page : syncedPage;
   const totalPages = Math.ceil(displayEpisodes.length / pageSize);
   const currentRangeEpisodes = displayEpisodes.slice(page * pageSize, (page + 1) * pageSize);
 
@@ -76,7 +68,7 @@ export function EpisodeList({ episodes, episodesTitles, currentEpisodeIndex, onE
                 return (
                   <button
                     key={idx}
-                    onClick={() => setPage(idx)}
+                    onClick={() => setManualPageState({ episodeIndex: currentEpisodeIndex, page: idx })}
                     className={`whitespace-nowrap px-3 py-1 text-xs font-medium rounded-full transition-all cursor-pointer ${isActive
                       ? "bg-white dark:bg-slate-700 text-primary ring-1 ring-primary/20"
                       : "text-slate-500 hover:bg-white dark:text-slate-400 dark:hover:bg-slate-700"

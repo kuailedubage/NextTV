@@ -105,7 +105,12 @@ export default function SearchContent() {
       setError(null);
 
       try {
-        const searchData = await searchVideos(query, videoSourcesRef.current, currentPage);
+        const searchData = await searchVideos(
+          query,
+          videoSourcesRef.current,
+          currentPage,
+          sourceFilter || undefined,
+        );
         setResults(searchData.results);
         setPageCount(searchData.pageCount);
 
@@ -131,7 +136,7 @@ export default function SearchContent() {
     }
 
     performSearch();
-  }, [query, enabledSourceKeys, currentPage]);
+  }, [query, enabledSourceKeys, currentPage, sourceFilter]);
 
   // 根据媒体类型和视频源过滤结果
   const filteredResults = results.filter((result) => {
@@ -310,5 +315,4 @@ export default function SearchContent() {
     </div>
   );
 }
-
 

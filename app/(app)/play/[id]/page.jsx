@@ -63,9 +63,17 @@ export default function PlayerPage() {
   if (error) {
     return (
       <div className="w-full max-w-7xl pt-4 flex items-center justify-center min-h-screen">
-        <div className="flex flex-col items-center gap-4">
-          <div className="animate-spin rounded-full h-16 w-16 border-4 border-primary border-t-transparent"></div>
-          <p className="text-gray-500">加载中...</p>
+        <div className="flex flex-col items-center gap-4 text-center">
+          <div className="w-16 h-16 rounded-full bg-red-50 text-red-500 flex items-center justify-center text-2xl font-bold">
+            !
+          </div>
+          <div className="space-y-1">
+            <p className="text-gray-900 font-semibold">视频加载失败</p>
+            <p className="text-gray-500 text-sm">{error}</p>
+          </div>
+          <Link href="/" className="text-primary text-sm hover:underline">
+            返回首页
+          </Link>
         </div>
       </div>
     );
